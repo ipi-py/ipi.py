@@ -1,0 +1,69 @@
+From 22eb6f48b5814b75d87410685131ef9deafe0922 Mon Sep 17 00:00:00 2001
+From: KOLANICH <kolan_n@mail.ru>
+Date: Thu, 20 Oct 2022 20:59:37 +0300
+Subject: [PATCH] problem hiding
+
+---
+ peval/components/decompose_assignments.py | 39 +++++++++++++++++++++++
+ peval/components/fold.py                  |  4 +++
+ peval/core/expression.py                  | 10 +++---
+ 3 files changed, 48 insertions(+), 5 deletions(-)
+ create mode 100644 peval/components/decompose_assignments.py
+
+diff --git a/peval/components/fold.py b/peval/components/fold.py
+index b4786bf..b6a1b70 100644
+--- a/peval/components/fold.py
++++ b/peval/components/fold.py
+@@ -125,17 +125,21 @@ def forward_transfer(
+         if isinstance(statement, ast.AnnAssign):
+             target = statement.target
+         else:
++            if len(statement.targets) != 1:
++                return gen_sym, in_env, [], {}
+             assert len(statement.targets) == 1
+             target = statement.targets[0]
+ 
+         if isinstance(target, ast.Name):
+             target = target.id
+         elif isinstance(target, (ast.Name, ast.Tuple)):
++            return gen_sym, in_env, [], {}
+             raise ValueError(
+                 "Destructuring assignment (should have been eliminated by other pass)",
+                 target,
+             )
+         else:
++            return gen_sym, in_env, [], {}
+             raise ValueError("Incorrect assignment target", target)
+ 
+         result, gen_sym = peval_expression(statement.value, gen_sym, in_env.known_values())
+diff --git a/peval/core/expression.py b/peval/core/expression.py
+index 324bc5e..e0cbe0d 100644
+--- a/peval/core/expression.py
++++ b/peval/core/expression.py
+@@ -122,8 +122,8 @@ def try_call_method(obj, name, args=(), kwds={}):
+ 
+ def peval_call(state: State, ctx: Context, func, args=[], keywords=[]):
+ 
+-    assert all(type(arg) != ast.Starred for arg in args)
+-    assert all(kw.arg is not None for kw in keywords)
++    #assert all(type(arg) != ast.Starred for arg in args)
++    #assert all(kw.arg is not None for kw in keywords)
+ 
+     keyword_expressions = [kw.value for kw in keywords]
+ 
+@@ -647,9 +647,9 @@ class _peval_expression_dispatcher:
+ 
+         return state, result
+ 
+-    @staticmethod
+-    def handle_Lambda(state: State, node: ast.Lambda, ctx: Context):
+-        raise NotImplementedError
++    #@staticmethod
++    #def handle_Lambda(state: State, node: ast.Lambda, ctx: Context):
++    #    raise NotImplementedError
+ 
+     @staticmethod
+     def handle_IfExp(state: State, node: ast.IfExp, ctx: Context):
+-- 
+2.32.0
+
